@@ -5,7 +5,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
 } from 'class-validator';
 import { RolesNameType } from 'src/utils/enums';
@@ -41,16 +40,6 @@ export class CreateUserDto {
   @IsOptional()
   @ApiProperty({ example: 'admin' })
   readonly role: RolesNameType;
-
-  @IsUUID()
-  @IsOptional()
-  @ApiProperty({ example: 'enterpriseId' })
-  readonly enterpriseId: string;
-
-  @IsUUID()
-  @IsOptional()
-  @ApiProperty({ example: 'schoolId' })
-  readonly schoolId: string;
 
   @IsString()
   @IsOptional()

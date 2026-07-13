@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   Param,
-  Patch,
   Post,
   Put,
   Query,
@@ -30,7 +29,6 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { AdminUserService } from './admin-user.service';
 import { CreateUserDto } from './dto/create.dto';
 import { SearchUserDto } from './dto/search.dto';
-import { UpdateUserLimitsDto } from './dto/update-user-limits.dto';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -55,25 +53,6 @@ export class AdminUserController {
     return this.service.create({
       ...data,
       avatarUrl: file ? file.location : undefined,
-    });
-  }
-
-  /*
-  LIST USERS WITH LIMITS
-  */
-  @UseGuards(AdminGuard)
-  @Get('limits')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Listar usuários com limites e uso de recursos' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'per_page', required: false })
-  async getUsersWithLimits(
-    @Query('page') page?: string,
-    @Query('per_page') per_page?: string,
-  ) {
-    return this.service.getUsersWithLimits({
-      page: page ? Number(page) : 1,
-      per_page: per_page ? Number(per_page) : 20,
     });
   }
 
@@ -167,30 +146,5 @@ export class AdminUserController {
   @ApiBearerAuth()
   async remove(@Param('id') id: string) {
     return this.service.remove(id);
-  }
-
-  /*
-  GET USER LIMITS BY ID
-  */
-  @UseGuards(AdminGuard)
-  @Get(':id/limits')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Detalhes de limites de um usuário' })
-  async getUserLimits(@Param('id') id: string) {
-    return this.service.getUserLimits(id);
-  }
-
-  /*
-  UPDATE USER LIMITS
-  */
-  @UseGuards(AdminGuard)
-  @Patch(':id/limits')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Atualizar limites de um usuário' })
-  async updateUserLimits(
-    @Param('id') id: string,
-    @Body() dto: UpdateUserLimitsDto,
-  ) {
-    return this.service.updateUserLimits(id, dto);
   }
 }

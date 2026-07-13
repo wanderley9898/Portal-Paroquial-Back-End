@@ -30,14 +30,6 @@ export class SearchUserFilterDto {
   @IsEnum(RolesEnum)
   @IsOptional()
   role?: RolesEnum;
-
-  @IsUUID()
-  @IsOptional()
-  schoolId?: string;
-
-  @IsUUID()
-  @IsOptional()
-  enterpriseId?: string;
 }
 
 export class SearchUserDto {

@@ -1,2 +1,2 @@
+export * from './news-category.enum';
 export * from './roles.enum';
-export * from './support-ticket.enum';

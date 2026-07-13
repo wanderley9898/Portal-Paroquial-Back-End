@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PermissionGroup } from 'src/entities';
 import { User as UserEntity } from 'src/entities/user.entity';
 import { Hash } from 'src/helpers/hash.helper';
 import { formatter } from 'src/utils';
@@ -19,29 +18,15 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
-
-    @InjectRepository(PermissionGroup)
-    private permissionGroupRepository: Repository<PermissionGroup>,
   ) {}
 
   async create(userData: Partial<UserEntity>): Promise<UserEntity> {
-    const permissionGroup = await this.permissionGroupRepository.findOne({
-      where: { role: userData.role },
-    });
-
-    if (!permissionGroup) {
-      throw new BadRequestException(
-        `Nenhum grupo de permissão foi encontrado.`,
-      );
-    }
-
     const playerCode = await this.generateUniquePlayerCode();
 
     const user = this.userRepository.create({
       ...userData,
       email: userData.email?.toLowerCase(),
       playerCode,
-      permissionGroupId: permissionGroup.id,
     });
 
     return await this.userRepository.save(user);
@@ -53,7 +38,6 @@ export class UserService {
         deleted_at: IsNull(),
         email: email.toLowerCase(),
       },
-      relations: ['permissionGroup'],
     });
 
     if (user) {
