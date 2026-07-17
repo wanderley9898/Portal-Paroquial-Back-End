@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional } from 'class-validator';
 
 export interface Search<T> {
   filter?: T;
@@ -16,12 +17,14 @@ export interface SearchResult<T> {
 
 export class SearchDto {
   @IsOptional()
-  @IsString()
-  @ApiPropertyOptional({ description: 'Número da página', example: '1' })
+  @Type(() => Number)
+  @IsInt()
+  @ApiPropertyOptional({ description: 'Número da página', example: 1 })
   page?: number;
 
   @IsOptional()
-  @IsString()
-  @ApiPropertyOptional({ description: 'Registros por página', example: '20' })
+  @Type(() => Number)
+  @IsInt()
+  @ApiPropertyOptional({ description: 'Registros por página', example: 20 })
   per_page?: number;
 }

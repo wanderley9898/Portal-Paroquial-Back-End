@@ -188,7 +188,7 @@ export class NewsService {
 
       qb.orderBy('news.featured', 'DESC')
         .addOrderBy('news.publishedAt', 'DESC')
-        .addOrderBy('news.createdAt', 'DESC')
+        .addOrderBy('news.created_at', 'DESC')
         .skip(skip)
         .take(per_page);
 
@@ -200,7 +200,9 @@ export class NewsService {
         currentPage: page,
         totalPages: Math.ceil(total / per_page),
       };
-    } catch {
+    } catch (error) {
+      console.error('Erro ao buscar notícias:', error);
+
       throw new InternalServerErrorException(MESSAGE_ERR_FIND);
     }
   }

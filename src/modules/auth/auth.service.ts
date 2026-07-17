@@ -7,8 +7,6 @@ import configuration from 'src/config/configuration';
 import { User } from 'src/entities/index';
 import { Hash } from 'src/helpers/hash.helper';
 import { UserService } from 'src/modules/user/user.service';
-import { RolesEnum } from 'src/utils/enums';
-import { RegisterDto } from './dto/register.dto';
 import { SocialLoginDto } from './dto/social-login.dto';
 
 @Injectable()
@@ -47,55 +45,6 @@ export class AuthService {
 
     const user = await this.userService.findByEmail(email);
 
-    return this.login(user);
-  }
-
-  async register(registerDto: RegisterDto): Promise<UserLoggedResponse> {
-    const hasUnifiedConsent = registerDto.acceptedLegal === true;
-    const hasLegacyConsent =
-      registerDto.acceptedTerms === true &&
-      registerDto.acceptedPrivacy === true &&
-      registerDto.acceptedCookies === true;
-
-    if (!hasUnifiedConsent && !hasLegacyConsent) {
-      throw new BadRequestException(
-        'É necessário aceitar os Termos de Uso, Política de Privacidade e Política de Cookies.',
-      );
-    }
-
-    // Verificar se o email já existe.
-    const existingUser = await this.userService.findByEmail(registerDto.email);
-
-    if (existingUser) {
-      throw new BadRequestException('Email already exists');
-    }
-
-    // Criar o usuário.
-    const hashedPassword = Hash.encrypt(registerDto.password);
-    const acceptedAt = new Date();
-    const legalVersion =
-      registerDto.legalVersion?.trim() || this.DEFAULT_LEGAL_VERSION;
-
-    const userData = {
-      name: registerDto.name,
-      email: registerDto.email,
-      phone: registerDto.phone,
-      document: registerDto.document,
-      password: hashedPassword,
-      role: RolesEnum.CLIENT, // Todos os usuários registrados são clientes por padrão.
-      isVerified: false, // Precisa verificar email posteriormente.
-      termsAcceptedAt: acceptedAt,
-      privacyAcceptedAt: acceptedAt,
-      cookiesAcceptedAt: acceptedAt,
-      termsAcceptedVersion: legalVersion,
-      privacyAcceptedVersion: legalVersion,
-      cookiesAcceptedVersion: legalVersion,
-    };
-
-    const user = await this.userService.create(userData);
-
-    // Fazer login automático após registro.
-    delete user.password;
     return this.login(user);
   }
 

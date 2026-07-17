@@ -47,15 +47,6 @@ export class User extends BaseEntityWithUUID {
   })
   email: string;
 
-  @Index({ unique: true })
-  @Column({
-    length: 16,
-    nullable: false,
-    name: 'player_code',
-    type: 'varchar',
-  })
-  playerCode: string;
-
   @Column({
     enum: RolesEnum,
     nullable: false,

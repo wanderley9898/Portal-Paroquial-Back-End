@@ -4,15 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
 import { AuthModule } from './modules/auth/auth.module';
-import { CampaignModule } from './modules/campaign/campaign.module';
-import { CharacterModule } from './modules/character/character.module';
-import { MailerModule } from './modules/mailer/mailer.module';
-import { PermissionGroupModule } from './modules/permission-group/permission-group.module';
-import { ResourcesModule } from './modules/resources/resources.module';
-import { SupportModule } from './modules/support/support.module';
-import { TagModule } from './modules/tag/tag.module';
+import { NewsModule } from './modules/news/news.module';
 import { UserModule } from './modules/user/user.module';
-import { WorldModule } from './modules/world/world.module';
 import { SeedModule } from './seeds/seed.module';
 
 @Module({
@@ -44,23 +37,14 @@ import { SeedModule } from './seeds/seed.module';
     // Seeds
     SeedModule,
 
-    // Email service
-    MailerModule,
-
     // Authentication
     AuthModule,
-    PermissionGroupModule,
-    ResourcesModule,
 
     // Users
     UserModule,
 
     // Content
-    CampaignModule,
-    CharacterModule,
-    SupportModule,
-    TagModule,
-    WorldModule,
+    NewsModule,
   ],
 })
 export class AppModule implements NestModule {

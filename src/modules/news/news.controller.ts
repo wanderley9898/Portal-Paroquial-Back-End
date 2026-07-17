@@ -143,6 +143,7 @@ export class NewsController {
     const per_page = query.per_page ? Number(query.per_page) : 10;
 
     let filter = query.filter;
+    console.log('filter', filter);
 
     if (typeof query.filter === 'string') {
       try {

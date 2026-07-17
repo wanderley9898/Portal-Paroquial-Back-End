@@ -21,12 +21,9 @@ export class UserService {
   ) {}
 
   async create(userData: Partial<UserEntity>): Promise<UserEntity> {
-    const playerCode = await this.generateUniquePlayerCode();
-
     const user = this.userRepository.create({
       ...userData,
       email: userData.email?.toLowerCase(),
-      playerCode,
     });
 
     return await this.userRepository.save(user);
@@ -40,10 +37,6 @@ export class UserService {
       },
     });
 
-    if (user) {
-      await this.ensurePlayerCode(user);
-    }
-
     return user;
   }
 
@@ -54,7 +47,6 @@ export class UserService {
       throw new NotFoundException('Usuário não encontrado.');
     }
 
-    await this.ensurePlayerCode(user);
     return user;
   }
 
@@ -143,39 +135,5 @@ export class UserService {
     await this.userRepository.save(entityPreload);
 
     return this.findById(user.id);
-  }
-
-  private async generateUniquePlayerCode(): Promise<string> {
-    for (let i = 0; i < 20; i += 1) {
-      const code = `LF${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
-
-      const existing = await this.userRepository.findOne({
-        where: {
-          playerCode: code,
-          deleted_at: IsNull(),
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!existing) {
-        return code;
-      }
-    }
-
-    throw new BadRequestException(
-      'Nao foi possível gerar um código único para o jogador.',
-    );
-  }
-
-  private async ensurePlayerCode(user: UserEntity): Promise<void> {
-    if (user.playerCode) {
-      return;
-    }
-
-    const playerCode = await this.generateUniquePlayerCode();
-    user.playerCode = playerCode;
-    await this.userRepository.save(user);
   }
 }
