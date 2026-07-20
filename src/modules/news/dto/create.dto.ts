@@ -89,7 +89,7 @@ export class CreateNewsDto {
   })
   @IsOptional()
   @IsDateString()
-  publishedAt?: Date;
+  publishedAt?: string;
 
   @ApiPropertyOptional({
     example: '2026-08-13T19:00:00.000Z',
@@ -97,7 +97,7 @@ export class CreateNewsDto {
   })
   @IsOptional()
   @IsDateString()
-  expiresAt?: Date;
+  expiresAt?: string;
 
   @ApiPropertyOptional({
     example: 'https://www.youtube.com/watch?v=xxxxxxxx',
