@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { NewsModule } from './modules/news/news.module';
 import { UserModule } from './modules/user/user.module';
 import { SeedModule } from './seeds/seed.module';
+import { BroadcastModule } from './modules/broadcast/Broadcast.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { SeedModule } from './seeds/seed.module';
 
     // Content
     NewsModule,
+    BroadcastModule,
   ],
 })
 export class AppModule implements NestModule {
