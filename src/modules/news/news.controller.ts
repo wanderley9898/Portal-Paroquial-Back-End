@@ -104,7 +104,7 @@ export class NewsController {
     description: 'Noticia encontrada',
   })
   async findByIdPublic(@Param('id') id: string) {
-    return this.newsService.findById(id);
+    return this.newsService.findByIdPublic(id);
   }
 
   /**

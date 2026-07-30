@@ -224,6 +224,32 @@ export class NewsService {
     return news;
   }
 
+  async findByIdPublic(id: string): Promise<News> {
+    const news = await this.repository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+
+    if (!news) {
+      throw new NotFoundException(NOT_FOUND_MESSAGE);
+    }
+
+    // Só permite visualizar notícias públicas
+    if (
+      !news.published ||
+      (news.publishedAt && news.publishedAt > new Date()) ||
+      (news.expiresAt && news.expiresAt < new Date())
+    ) {
+      throw new NotFoundException(NOT_FOUND_MESSAGE);
+    }
+
+    await this.repository.increment({ id }, 'views', 1);
+
+    news.views += 1;
+
+    return news;
+  }
+
   /* =====================================================
    * DELETE
    ===================================================== */
