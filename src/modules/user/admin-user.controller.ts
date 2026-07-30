@@ -95,7 +95,6 @@ export class AdminUserController {
     const filter = query?.filter ? query.filter : {};
     const page = query?.page ? Number(query.page) : 1;
     const per_page = query?.per_page ? Number(query.per_page) : 10;
-
     return this.service.search(
       {
         page,

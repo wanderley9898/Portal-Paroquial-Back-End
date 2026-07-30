@@ -13,6 +13,7 @@ import { CreateUserDto } from './dto/create.dto';
 import { SearchUserDto, SearchUserFilterDto } from './dto/search.dto';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { RolesEnum } from 'src/utils/enums';
 
 @Injectable()
 export class AdminUserService {
@@ -57,15 +58,17 @@ export class AdminUserService {
 
       const where: any = {
         deleted_at: IsNull(),
+        role: Not(RolesEnum.SUPER_ADMIN),
         ...this.buildSearchFilter(filter, user),
       };
 
       const [result, total] = await this.userRepository.findAndCount({
         where,
-        relations: ['permissionGroup'],
         skip,
         take: per_page,
-        order: { created_at: 'DESC' },
+        order: {
+          created_at: 'DESC',
+        },
       });
 
       return {
@@ -88,7 +91,6 @@ export class AdminUserService {
         id,
         deleted_at: IsNull(),
       },
-      relations: ['permissionGroup'],
     });
 
     if (!user) {
@@ -117,12 +119,13 @@ export class AdminUserService {
       }
     }
 
-    delete data.password;
+    const password = data.password ? Hash.encrypt(data.password) : undefined;
 
     const preload = await this.userRepository.preload({
       ...user,
       ...data,
       email,
+      password,
     });
 
     return this.userRepository.save(preload);
