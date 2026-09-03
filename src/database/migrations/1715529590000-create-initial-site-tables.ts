@@ -16,7 +16,11 @@ export class CreateInitialSiteTables1715529590000
       'public';
 
     await queryRunner.createSchema(schema, true);
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+    const escapedSchema = schema.replace(/"/g, '""');
+    await queryRunner.query(
+      `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA "${escapedSchema}"`,
+    );
+    const uuidDefault = `"${escapedSchema}"."uuid_generate_v4"()`;
 
     const hasUsersTable = await queryRunner.hasTable('users');
     if (!hasUsersTable) {
@@ -29,7 +33,7 @@ export class CreateInitialSiteTables1715529590000
               name: 'id',
               type: 'uuid',
               isPrimary: true,
-              default: 'uuid_generate_v4()',
+              default: uuidDefault,
             },
             {
               name: 'created_at',
@@ -175,7 +179,7 @@ export class CreateInitialSiteTables1715529590000
               name: 'id',
               type: 'uuid',
               isPrimary: true,
-              default: 'uuid_generate_v4()',
+              default: uuidDefault,
             },
             {
               name: 'created_at',

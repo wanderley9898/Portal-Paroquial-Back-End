@@ -14,7 +14,11 @@ export class CreateBroadcastsTable1715529600000 implements MigrationInterface {
       'public';
 
     await queryRunner.createSchema(schema, true);
-    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+    const escapedSchema = schema.replace(/"/g, '""');
+    await queryRunner.query(
+      `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA "${escapedSchema}"`,
+    );
+    const uuidDefault = `"${escapedSchema}"."uuid_generate_v4"()`;
 
     const hasBroadcastsTable = await queryRunner.hasTable('broadcasts');
 
@@ -28,7 +32,7 @@ export class CreateBroadcastsTable1715529600000 implements MigrationInterface {
               name: 'id',
               type: 'uuid',
               isPrimary: true,
-              default: 'uuid_generate_v4()',
+              default: uuidDefault,
             },
             {
               name: 'created_at',
