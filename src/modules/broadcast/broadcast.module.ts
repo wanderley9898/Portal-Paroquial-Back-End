@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Broadcast, User } from 'src/entities';
-import { BroadcastController } from './Broadcast.controller';
+import { BroadcastController } from './broadcast.controller';
 import { BroadcastService } from './broadcast.service';
 
 @Module({
