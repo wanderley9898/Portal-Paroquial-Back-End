@@ -4,10 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
 import { AuthModule } from './modules/auth/auth.module';
+import { BroadcastModule } from './modules/broadcast/broadcast.module';
 import { NewsModule } from './modules/news/news.module';
 import { UserModule } from './modules/user/user.module';
 import { SeedModule } from './seeds/seed.module';
-import { BroadcastModule } from './modules/broadcast/Broadcast.module';
 
 @Module({
   imports: [
