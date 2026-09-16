@@ -6,6 +6,7 @@ import { RequestLoggerMiddleware } from './middleware/request-logger.middleware'
 import { AuthModule } from './modules/auth/auth.module';
 import { BroadcastModule } from './modules/broadcast/broadcast.module';
 import { NewsModule } from './modules/news/news.module';
+import { ParishEventModule } from './modules/parish-event/parish-event.module';
 import { UserModule } from './modules/user/user.module';
 import { SeedModule } from './seeds/seed.module';
 
@@ -46,6 +47,7 @@ import { SeedModule } from './seeds/seed.module';
 
     // Content
     NewsModule,
+    ParishEventModule,
     BroadcastModule,
   ],
 })
