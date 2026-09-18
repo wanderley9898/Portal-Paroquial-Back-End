@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { SearchResult } from 'src/@types/search.type';
 import { ParishEvent } from 'src/entities';
+import { S3Service } from 'src/services/aws/s3.service';
 import { Repository } from 'typeorm';
 import {
   CreateParishEventDto,
@@ -40,8 +41,21 @@ export class ParishEventService {
   async update(id: string, data: UpdateParishEventDto): Promise<ParishEvent> {
     try {
       const event = await this.findById(id);
-      Object.assign(event, data);
+      const oldImage = event.image;
+      const nextImage =
+        data.image === undefined ? event.image : data.image || null;
+
+      Object.assign(event, {
+        ...data,
+        image: nextImage,
+      });
+
       await this.repository.save(event);
+
+      if (oldImage && oldImage !== nextImage) {
+        await S3Service.deleteImageFromS3IfNeeded(oldImage);
+      }
+
       return this.findById(id);
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
@@ -109,7 +123,9 @@ export class ParishEventService {
 
   async remove(id: string): Promise<void> {
     try {
-      await this.findById(id);
+      const event = await this.findById(id);
+
+      await S3Service.deleteImageFromS3IfNeeded(event.image);
       await this.repository.delete(id);
     } catch (error) {
       if (

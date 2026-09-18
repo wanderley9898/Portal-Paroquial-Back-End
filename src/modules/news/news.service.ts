@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { SearchResult } from 'src/@types/search.type';
 import { News, User } from 'src/entities';
+import { S3Service } from 'src/services/aws/s3.service';
 import { Repository } from 'typeorm';
 import { CreateNewsDto, SearchNewsDto, UpdateNewsDto } from './dto';
 
@@ -79,13 +80,22 @@ export class NewsService {
   async update(id: string, data: UpdateNewsDto): Promise<News> {
     try {
       const news = await this.findById(id);
+      const oldCoverImage = news.coverImage;
+      const oldThumbnail = news.thumbnail;
+
+      const nextCoverImage =
+        data.coverImage === undefined
+          ? news.coverImage
+          : data.coverImage || null;
+      const nextThumbnail =
+        data.thumbnail === undefined ? news.thumbnail : data.thumbnail || null;
 
       Object.assign(news, {
         title: data.title ?? news.title,
         subtitle: data.subtitle ?? news.subtitle,
         content: data.content ?? news.content,
-        coverImage: data.coverImage ?? news.coverImage,
-        thumbnail: data.thumbnail ?? news.thumbnail,
+        coverImage: nextCoverImage,
+        thumbnail: nextThumbnail,
         category: data.category ?? news.category,
         featured: data.featured ?? news.featured,
         published: data.published ?? news.published,
@@ -97,6 +107,14 @@ export class NewsService {
       });
 
       await this.repository.save(news);
+
+      if (oldCoverImage && oldCoverImage !== nextCoverImage) {
+        await S3Service.deleteImageFromS3IfNeeded(oldCoverImage);
+      }
+
+      if (oldThumbnail && oldThumbnail !== nextThumbnail) {
+        await S3Service.deleteImageFromS3IfNeeded(oldThumbnail);
+      }
 
       return this.findById(id);
     } catch (error) {
@@ -256,7 +274,12 @@ export class NewsService {
 
   async remove(id: string): Promise<void> {
     try {
-      await this.findById(id);
+      const news = await this.findById(id);
+
+      await Promise.all([
+        S3Service.deleteImageFromS3IfNeeded(news.coverImage),
+        S3Service.deleteImageFromS3IfNeeded(news.thumbnail),
+      ]);
 
       await this.repository.delete(id);
     } catch (error) {

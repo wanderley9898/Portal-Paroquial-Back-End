@@ -160,7 +160,6 @@ export class S3Service {
         throw new Error('URL não parece ser do S3');
       }
 
-      // pathname já vem com `/serraimoveis/images/...`
       // então basta remover o "/" inicial e fazer decode
       return decodeURIComponent(
         pathname.startsWith('/') ? pathname.slice(1) : pathname,
@@ -168,6 +167,29 @@ export class S3Service {
     } catch (error) {
       console.error('Erro ao extrair key do S3:', error);
       return '';
+    }
+  }
+
+  static async deleteImageFromS3IfNeeded(
+    imageUrl?: string | null,
+  ): Promise<void> {
+    if (!imageUrl) {
+      return;
+    }
+
+    const key = S3Service.extractKeyFromS3Url(imageUrl);
+
+    if (!key) {
+      return;
+    }
+
+    try {
+      await S3Service.deleteObjectByKey(key);
+    } catch (error) {
+      console.warn(
+        'Não foi possível remover a imagem antiga da notícia:',
+        error,
+      );
     }
   }
 }

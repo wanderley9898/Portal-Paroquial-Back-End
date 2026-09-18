@@ -1,5 +1,4 @@
 import slugify from 'slugify';
-import * as XLSX from 'xlsx';
 interface DateTimeFormatOptions extends Intl.DateTimeFormatOptions {
   includeTime?: boolean;
 }
@@ -52,30 +51,6 @@ export const formatter = {
     }
 
     return 'Inválido.';
-  },
-
-  excelDateToJSDate(value: any): Date | null {
-    if (!value) return null;
-
-    // se já for Date
-    if (value instanceof Date) return value;
-
-    // se for número (serial do Excel)
-    if (typeof value === 'number') {
-      const parsed = XLSX.SSF.parse_date_code(value);
-      if (!parsed) return null;
-
-      return new Date(
-        parsed.y,
-        parsed.m - 1,
-        parsed.d,
-        parsed.H || 0,
-        parsed.M || 0,
-        parsed.S || 0,
-      );
-    }
-
-    return null;
   },
 
   brDateToDate(value: string | number | null): Date | null {

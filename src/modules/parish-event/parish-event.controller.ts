@@ -10,9 +10,13 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { getMulterConfig } from 'src/config/multer-config';
 import { Roles } from 'src/decorators/roles.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesEnum } from 'src/utils/enums';
@@ -48,9 +52,16 @@ export class ParishEventController {
   @Post()
   @UseGuards(AuthGuard)
   @Roles(RolesEnum.ADMIN, RolesEnum.SUPER_ADMIN, RolesEnum.COMMUNICATION)
+  @UseInterceptors(FileInterceptor('image', getMulterConfig(true)))
   @ApiBearerAuth()
-  async create(@Body() data: CreateParishEventDto) {
-    return this.parishEventService.create(data);
+  async create(
+    @Body() data: CreateParishEventDto,
+    @UploadedFile() file?: Express.MulterS3.File,
+  ) {
+    return this.parishEventService.create({
+      ...data,
+      image: file?.location ?? data.image,
+    });
   }
 
   @Put(':id')
@@ -61,9 +72,17 @@ export class ParishEventController {
     RolesEnum.COMMUNICATION,
     RolesEnum.EDITOR,
   )
+  @UseInterceptors(FileInterceptor('image', getMulterConfig(true)))
   @ApiBearerAuth()
-  async update(@Param('id') id: string, @Body() data: UpdateParishEventDto) {
-    return this.parishEventService.update(id, data);
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateParishEventDto,
+    @UploadedFile() file?: Express.MulterS3.File,
+  ) {
+    return this.parishEventService.update(id, {
+      ...data,
+      image: file?.location ?? data.image,
+    });
   }
 
   @Get(':id')

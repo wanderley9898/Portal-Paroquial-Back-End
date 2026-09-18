@@ -10,8 +10,11 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -21,6 +24,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { getMulterConfig } from 'src/config/multer-config';
 import { CurrentUser } from 'src/decorators/current-user.decorator';
 import { Roles } from 'src/decorators/roles.decorator';
 import { User } from 'src/entities';
@@ -76,6 +80,8 @@ export class NewsController {
         throw new BadRequestException('Filtro inválido');
       }
     }
+
+    console.log('filter', filter);
 
     return this.newsService.search({
       page,
@@ -166,17 +172,45 @@ export class NewsController {
   @Post()
   @UseGuards(AuthGuard)
   @Roles(RolesEnum.ADMIN, RolesEnum.SUPER_ADMIN, RolesEnum.COMMUNICATION)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'coverImage', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+      ],
+      getMulterConfig(true),
+    ),
+  )
   @ApiOperation({
     summary: 'Criar noticia',
-    description: 'Cria uma nova noticia no sistema.',
+    description:
+      'Cria uma nova noticia no sistema. Aceita URL externa ou upload de imagem.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Noticia criada com sucesso',
   })
   @ApiBearerAuth()
-  async create(@Body() data: CreateNewsDto, @CurrentUser() user: User) {
-    return this.newsService.create(data, user);
+  async create(
+    @Body() data: CreateNewsDto,
+    @CurrentUser() user: User,
+    @UploadedFiles()
+    files?: {
+      coverImage?: Express.MulterS3.File[];
+      thumbnail?: Express.MulterS3.File[];
+    },
+  ) {
+    const coverImage = files?.coverImage?.[0]?.location ?? data.coverImage;
+    const thumbnail = files?.thumbnail?.[0]?.location ?? data.thumbnail;
+
+    return this.newsService.create(
+      {
+        ...data,
+        coverImage,
+        thumbnail,
+      },
+      user,
+    );
   }
 
   /**
@@ -190,9 +224,19 @@ export class NewsController {
     RolesEnum.COMMUNICATION,
     RolesEnum.EDITOR,
   )
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'coverImage', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+      ],
+      getMulterConfig(true),
+    ),
+  )
   @ApiOperation({
     summary: 'Atualizar noticia',
-    description: 'Atualiza os dados de uma noticia existente.',
+    description:
+      'Atualiza os dados de uma noticia existente. Aceita URL externa ou upload de imagem.',
   })
   @ApiParam({
     name: 'id',
@@ -204,8 +248,20 @@ export class NewsController {
     description: 'Noticia atualizada com sucesso',
   })
   @ApiBearerAuth()
-  async update(@Param('id') id: string, @Body() data: UpdateNewsDto) {
-    return this.newsService.update(id, data);
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateNewsDto,
+    @UploadedFiles()
+    files?: {
+      coverImage?: Express.MulterS3.File[];
+      thumbnail?: Express.MulterS3.File[];
+    },
+  ) {
+    return this.newsService.update(id, {
+      ...data,
+      coverImage: files?.coverImage?.[0]?.location ?? data.coverImage,
+      thumbnail: files?.thumbnail?.[0]?.location ?? data.thumbnail,
+    });
   }
 
   /**
