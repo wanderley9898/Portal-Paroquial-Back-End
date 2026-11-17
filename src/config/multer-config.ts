@@ -46,7 +46,6 @@ export function getMulterConfig(isPublic: boolean): Options {
       s3: s3Config,
       bucket: s3Settings.bucketName,
       acl: isPublic ? 'public-read' : undefined,
-      serverSideEncryption: 'AES256',
       contentType: multerS3.AUTO_CONTENT_TYPE,
       key: (_, file, cb) => {
         const extension = path.extname(file.originalname).toLowerCase();
