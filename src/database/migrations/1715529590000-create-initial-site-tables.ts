@@ -6,6 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { getUuidDefault } from '../uuid-default';
 
 export class CreateInitialSiteTables1715529590000
   implements MigrationInterface
@@ -16,11 +17,7 @@ export class CreateInitialSiteTables1715529590000
       'public';
 
     await queryRunner.createSchema(schema, true);
-    const escapedSchema = schema.replace(/"/g, '""');
-    await queryRunner.query(
-      `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA "${escapedSchema}"`,
-    );
-    const uuidDefault = `"${escapedSchema}"."uuid_generate_v4"()`;
+    const uuidDefault = await getUuidDefault(queryRunner, schema);
 
     const hasUsersTable = await queryRunner.hasTable('users');
     if (!hasUsersTable) {

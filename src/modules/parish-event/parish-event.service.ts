@@ -34,7 +34,8 @@ export class ParishEventService {
       const event = this.repository.create(data);
       await this.repository.save(event);
       return this.findById(event.id);
-    } catch {
+    } catch (error) {
+      console.error('Error creating parish event:', error);
       throw new InternalServerErrorException(CREATE_ERROR);
     }
   }

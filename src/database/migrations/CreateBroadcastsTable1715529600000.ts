@@ -6,6 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { getUuidDefault } from '../uuid-default';
 
 export class CreateBroadcastsTable1715529600000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -14,11 +15,7 @@ export class CreateBroadcastsTable1715529600000 implements MigrationInterface {
       'public';
 
     await queryRunner.createSchema(schema, true);
-    const escapedSchema = schema.replace(/"/g, '""');
-    await queryRunner.query(
-      `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA "${escapedSchema}"`,
-    );
-    const uuidDefault = `"${escapedSchema}"."uuid_generate_v4"()`;
+    const uuidDefault = await getUuidDefault(queryRunner, schema);
 
     const hasBroadcastsTable = await queryRunner.hasTable('broadcasts');
 

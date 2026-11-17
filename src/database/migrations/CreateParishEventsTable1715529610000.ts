@@ -1,5 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { getUuidDefault } from '../uuid-default';
 
 export class CreateParishEventsTable1715529610000
   implements MigrationInterface
@@ -8,11 +9,7 @@ export class CreateParishEventsTable1715529610000
     const schema =
       (queryRunner.connection.options as PostgresConnectionOptions).schema ??
       'public';
-    const escapedSchema = schema.replace(/"/g, '""');
-    await queryRunner.query(
-      `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA "${escapedSchema}"`,
-    );
-    const uuidDefault = `"${escapedSchema}"."uuid_generate_v4"()`;
+    const uuidDefault = await getUuidDefault(queryRunner, schema);
     const hasTable = await queryRunner.hasTable('parish_events');
 
     if (hasTable) return;
