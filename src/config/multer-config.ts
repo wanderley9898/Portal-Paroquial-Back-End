@@ -6,8 +6,8 @@ import envs from './configuration';
 import { s3Config } from './s3-config';
 import multerS3 = require('multer-s3');
 
-const awsCredentials = envs().aws;
-const appFolder = awsCredentials.folder;
+const s3Settings = envs().s3;
+const appFolder = s3Settings.folder;
 
 export function getMulterConfig(isPublic: boolean): Options {
   const allowedExtensions = [
@@ -32,13 +32,7 @@ export function getMulterConfig(isPublic: boolean): Options {
     cb(null, true);
   };
 
-  const hasS3Config =
-    !!awsCredentials.bucketName &&
-    !!awsCredentials.region &&
-    !!awsCredentials.accessKeyId &&
-    !!awsCredentials.secretAccessKey;
-
-  if (!hasS3Config) {
+  if (!s3Settings.enabled) {
     return {
       fileFilter,
       limits: {
@@ -50,7 +44,7 @@ export function getMulterConfig(isPublic: boolean): Options {
   return {
     storage: multerS3({
       s3: s3Config,
-      bucket: awsCredentials.bucketName,
+      bucket: s3Settings.bucketName,
       acl: isPublic ? 'public-read' : undefined,
       serverSideEncryption: 'AES256',
       contentType: multerS3.AUTO_CONTENT_TYPE,

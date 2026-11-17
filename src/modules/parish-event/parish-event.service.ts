@@ -26,6 +26,7 @@ export class ParishEventService {
   constructor(
     @InjectRepository(ParishEvent)
     private readonly repository: Repository<ParishEvent>,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(data: CreateParishEventDto): Promise<ParishEvent> {
@@ -53,7 +54,7 @@ export class ParishEventService {
       await this.repository.save(event);
 
       if (oldImage && oldImage !== nextImage) {
-        await S3Service.deleteImageFromS3IfNeeded(oldImage);
+        await this.s3Service.deleteImageFromS3IfNeeded(oldImage);
       }
 
       return this.findById(id);
@@ -125,7 +126,7 @@ export class ParishEventService {
     try {
       const event = await this.findById(id);
 
-      await S3Service.deleteImageFromS3IfNeeded(event.image);
+      await this.s3Service.deleteImageFromS3IfNeeded(event.image);
       await this.repository.delete(id);
     } catch (error) {
       if (

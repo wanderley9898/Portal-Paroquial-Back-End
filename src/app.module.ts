@@ -9,6 +9,7 @@ import { NewsModule } from './modules/news/news.module';
 import { ParishEventModule } from './modules/parish-event/parish-event.module';
 import { UserModule } from './modules/user/user.module';
 import { SeedModule } from './seeds/seed.module';
+import { S3StorageModule } from './services/aws/s3-storage.module';
 
 @Module({
   imports: [
@@ -16,8 +17,37 @@ import { SeedModule } from './seeds/seed.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      validate: (config) => {
+        const configured = [
+          'S3_ENDPOINT',
+          'S3_REGION',
+          'S3_ACCESS_KEY',
+          'S3_SECRET_KEY',
+          'S3_BUCKET',
+          'S3_FORCE_PATH_STYLE',
+          'S3_PUBLIC_URL',
+          'S3_USE_SSL',
+          'S3_FOLDER',
+        ].some((key) => Boolean(config[key]));
+        const missing = [
+          ['S3_ENDPOINT', config.S3_ENDPOINT],
+          ['S3_ACCESS_KEY', config.S3_ACCESS_KEY],
+          ['S3_SECRET_KEY', config.S3_SECRET_KEY],
+        ]
+          .filter(([, value]) => configured && !value)
+          .map(([name]) => name);
+
+        if (missing.length) {
+          throw new Error(
+            `Missing required S3 configuration: ${missing.join(', ')}`,
+          );
+        }
+
+        return config;
+      },
     }),
 
+    S3StorageModule,
     // Config typeOrm
     TypeOrmModule.forRoot({
       entities: [__dirname + '/**/*.entity{.ts,.js}'],

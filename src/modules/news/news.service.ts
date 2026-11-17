@@ -26,6 +26,8 @@ export class NewsService {
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly s3Service: S3Service,
   ) {}
 
   /* =====================================================
@@ -109,11 +111,11 @@ export class NewsService {
       await this.repository.save(news);
 
       if (oldCoverImage && oldCoverImage !== nextCoverImage) {
-        await S3Service.deleteImageFromS3IfNeeded(oldCoverImage);
+        await this.s3Service.deleteImageFromS3IfNeeded(oldCoverImage);
       }
 
       if (oldThumbnail && oldThumbnail !== nextThumbnail) {
-        await S3Service.deleteImageFromS3IfNeeded(oldThumbnail);
+        await this.s3Service.deleteImageFromS3IfNeeded(oldThumbnail);
       }
 
       return this.findById(id);
@@ -277,8 +279,8 @@ export class NewsService {
       const news = await this.findById(id);
 
       await Promise.all([
-        S3Service.deleteImageFromS3IfNeeded(news.coverImage),
-        S3Service.deleteImageFromS3IfNeeded(news.thumbnail),
+        this.s3Service.deleteImageFromS3IfNeeded(news.coverImage),
+        this.s3Service.deleteImageFromS3IfNeeded(news.thumbnail),
       ]);
 
       await this.repository.delete(id);

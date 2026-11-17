@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
+import { getUploadedFileUrl } from 'src/config/s3-config';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -52,7 +53,7 @@ export class AdminUserController {
   ) {
     return this.service.create({
       ...data,
-      avatarUrl: file ? file.location : undefined,
+      avatarUrl: getUploadedFileUrl(file),
     });
   }
 
@@ -119,7 +120,7 @@ export class AdminUserController {
   ) {
     return this.service.update(id, {
       ...data,
-      avatarUrl: file ? file.location : undefined,
+      avatarUrl: getUploadedFileUrl(file),
     });
   }
 

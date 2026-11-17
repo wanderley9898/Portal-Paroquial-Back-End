@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { getUploadedFileUrl } from 'src/config/s3-config';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -200,8 +201,10 @@ export class NewsController {
       thumbnail?: Express.MulterS3.File[];
     },
   ) {
-    const coverImage = files?.coverImage?.[0]?.location ?? data.coverImage;
-    const thumbnail = files?.thumbnail?.[0]?.location ?? data.thumbnail;
+    const coverImage =
+      getUploadedFileUrl(files?.coverImage?.[0]) ?? data.coverImage;
+    const thumbnail =
+      getUploadedFileUrl(files?.thumbnail?.[0]) ?? data.thumbnail;
 
     return this.newsService.create(
       {
@@ -259,8 +262,8 @@ export class NewsController {
   ) {
     return this.newsService.update(id, {
       ...data,
-      coverImage: files?.coverImage?.[0]?.location ?? data.coverImage,
-      thumbnail: files?.thumbnail?.[0]?.location ?? data.thumbnail,
+      coverImage: getUploadedFileUrl(files?.coverImage?.[0]) ?? data.coverImage,
+      thumbnail: getUploadedFileUrl(files?.thumbnail?.[0]) ?? data.thumbnail,
     });
   }
 

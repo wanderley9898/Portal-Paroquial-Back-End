@@ -14,7 +14,7 @@ Este repositório concentra a camada de serviços da aplicação: autenticação
 | Banco de dados | PostgreSQL                               |
 | ORM            | TypeORM                                  |
 | Autenticação   | JWT + Passport                           |
-| Armazenamento  | AWS S3 ou armazenamento local via Multer |
+| Armazenamento  | RustFS (API compatível com S3) ou armazenamento em memória via Multer |
 | Documentação   | Swagger                                  |
 | Containers     | Docker Compose                           |
 
@@ -78,7 +78,7 @@ ACCESS_TOKEN_VALIDITY_DURATION_IN_DAYS=30d
 RUN_SEED_ON_START=false
 ```
 
-Outras variáveis opcionais podem incluir configurações de e-mail, AWS S3 e autenticação social, conforme a necessidade do ambiente.
+Outras variáveis opcionais podem incluir configurações de e-mail, RustFS/S3 e autenticação social, conforme a necessidade do ambiente.
 
 ## Como executar localmente
 
@@ -156,7 +156,8 @@ npm run migration:run
 
 ## Observações importantes
 
-- Se as variáveis de AWS S3 não forem configuradas, o fluxo de upload pode continuar usando a configuração local padrão do Multer.
+- A integração de arquivos usa a API S3 compatível do RustFS. Configure `S3_ENDPOINT`, `S3_ACCESS_KEY` e `S3_SECRET_KEY` com uma Service Account IAM da aplicação; sem essas variáveis, o Multer mantém o armazenamento em memória local.
+- `S3_PUBLIC_URL` é opcional. Configure-a somente quando a URL pública dos objetos for diferente do endpoint S3; o valor deve ser a raiz acessível externamente, sem o nome do bucket.
 - O seed pode ser disparado automaticamente ao iniciar a aplicação quando a variável RUN_SEED_ON_START estiver definida como true.
 - A aplicação já inclui Swagger para facilitar a exploração dos endpoints durante o desenvolvimento.
 

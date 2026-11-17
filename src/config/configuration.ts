@@ -1,5 +1,40 @@
 import 'dotenv/config';
 
+const parseBoolean = (value: string | undefined, defaultValue: boolean) => {
+  if (value === undefined || value === '') return defaultValue;
+  if (value.toLowerCase() === 'true') return true;
+  if (value.toLowerCase() === 'false') return false;
+  throw new Error('S3_FORCE_PATH_STYLE and S3_USE_SSL must be true or false.');
+};
+
+const normalizeEndpoint = (
+  endpoint: string | undefined,
+  useSSL: boolean,
+): string | undefined => {
+  if (!endpoint) return undefined;
+  const withProtocol = /^[a-z][a-z\d+.-]*:\/\//i.test(endpoint)
+    ? endpoint
+    : `${useSSL ? 'https' : 'http'}://${endpoint}`;
+  const parsed = new URL(withProtocol);
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('S3_ENDPOINT must use http or https.');
+  }
+
+  return parsed.toString().replace(/\/$/, '');
+};
+
+const normalizePublicUrl = (publicUrl: string | undefined) => {
+  if (!publicUrl) return undefined;
+  const parsed = new URL(publicUrl);
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('S3_PUBLIC_URL must use http or https.');
+  }
+
+  return parsed.toString().replace(/\/$/, '');
+};
+
 export default () => ({
   apiKey: process.env.API_KEY,
   isProd: process.env.NODE_ENV === 'production',
@@ -29,11 +64,19 @@ export default () => ({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-  aws: {
-    region: process.env.AWS_S3_BUCKET_REGION,
-    bucketName: process.env.AWS_S3_BUCKET_NAME,
-    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
-    folder: process.env.AWS_S3_FOLDER || 'uploads',
+  s3: {
+    endpoint: normalizeEndpoint(
+      process.env.S3_ENDPOINT,
+      parseBoolean(process.env.S3_USE_SSL, true),
+    ),
+    region: process.env.S3_REGION || 'us-east-1',
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_KEY,
+    bucketName: process.env.S3_BUCKET || 'pousada',
+    forcePathStyle: parseBoolean(process.env.S3_FORCE_PATH_STYLE, true),
+    publicUrl: normalizePublicUrl(process.env.S3_PUBLIC_URL),
+    useSSL: parseBoolean(process.env.S3_USE_SSL, true),
+    folder: process.env.S3_FOLDER || 'uploads',
+    enabled: Boolean(process.env.S3_ENDPOINT),
   },
 });

@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { getUploadedFileUrl } from 'src/config/s3-config';
 import { getMulterConfig } from 'src/config/multer-config';
 import { Roles } from 'src/decorators/roles.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -60,7 +61,7 @@ export class ParishEventController {
   ) {
     return this.parishEventService.create({
       ...data,
-      image: file?.location ?? data.image,
+      image: getUploadedFileUrl(file) ?? data.image,
     });
   }
 
@@ -81,7 +82,7 @@ export class ParishEventController {
   ) {
     return this.parishEventService.update(id, {
       ...data,
-      image: file?.location ?? data.image,
+      image: getUploadedFileUrl(file) ?? data.image,
     });
   }
 
