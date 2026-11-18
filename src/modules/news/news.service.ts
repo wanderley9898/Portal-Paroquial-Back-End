@@ -81,7 +81,7 @@ export class NewsService {
 
   async update(id: string, data: UpdateNewsDto): Promise<News> {
     try {
-      const news = await this.findById(id);
+      const news = await this.getNewsById(id);
       const oldCoverImage = news.coverImage;
       const oldThumbnail = news.thumbnail;
 
@@ -213,9 +213,12 @@ export class NewsService {
         .take(per_page);
 
       const [items, total] = await qb.getManyAndCount();
+      const signedItems = await Promise.all(
+        items.map((item) => this.withSignedImages(item)),
+      );
 
       return {
-        items,
+        items: signedItems,
         totalItems: total,
         currentPage: page,
         totalPages: Math.ceil(total / per_page),
@@ -232,6 +235,10 @@ export class NewsService {
    ===================================================== */
 
   async findById(id: string): Promise<News> {
+    return this.withSignedImages(await this.getNewsById(id));
+  }
+
+  private async getNewsById(id: string): Promise<News> {
     const news = await this.repository.findOne({
       where: { id },
       relations: ['author'],
@@ -245,14 +252,7 @@ export class NewsService {
   }
 
   async findByIdPublic(id: string): Promise<News> {
-    const news = await this.repository.findOne({
-      where: { id },
-      relations: ['author'],
-    });
-
-    if (!news) {
-      throw new NotFoundException(NOT_FOUND_MESSAGE);
-    }
+    const news = await this.getNewsById(id);
 
     // Só permite visualizar notícias públicas
     if (
@@ -267,7 +267,7 @@ export class NewsService {
 
     news.views += 1;
 
-    return news;
+    return this.withSignedImages(news);
   }
 
   /* =====================================================
@@ -276,7 +276,7 @@ export class NewsService {
 
   async remove(id: string): Promise<void> {
     try {
-      const news = await this.findById(id);
+      const news = await this.getNewsById(id);
 
       await Promise.all([
         this.s3Service.deleteImageFromS3IfNeeded(news.coverImage),
@@ -294,5 +294,22 @@ export class NewsService {
 
       throw new InternalServerErrorException(MESSAGE_ERR_DELETE);
     }
+  }
+
+  private async withSignedImages(news: News): Promise<News> {
+    const [coverImage, thumbnail, authorAvatar] = await Promise.all([
+      this.s3Service.getSignedUrlForImage(news.coverImage),
+      this.s3Service.getSignedUrlForImage(news.thumbnail),
+      this.s3Service.getSignedUrlForImage(news.author?.avatarUrl),
+    ]);
+
+    return {
+      ...news,
+      coverImage,
+      thumbnail,
+      author: news.author
+        ? { ...news.author, avatarUrl: authorAvatar }
+        : news.author,
+    };
   }
 }

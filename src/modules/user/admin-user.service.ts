@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SearchResult } from 'src/@types/search.type';
 import { User } from 'src/entities/user.entity';
 import { Hash } from 'src/helpers/hash.helper';
+import { S3Service } from 'src/services/aws/s3.service';
 import { IsNull, Not, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create.dto';
 import { SearchUserDto, SearchUserFilterDto } from './dto/search.dto';
@@ -20,6 +21,7 @@ export class AdminUserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(data: CreateUserDto) {
@@ -46,7 +48,7 @@ export class AdminUserService {
       password,
     });
 
-    return this.userRepository.save(user);
+    return this.withSignedAvatar(await this.userRepository.save(user));
   }
 
   async search(
@@ -70,12 +72,15 @@ export class AdminUserService {
           created_at: 'DESC',
         },
       });
+      const signedResults = await Promise.all(
+        result.map((item) => this.withSignedAvatar(item)),
+      );
 
       return {
         totalItems: total,
         currentPage: page,
         totalPages: Math.ceil(total / per_page),
-        items: result,
+        items: signedResults,
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -86,6 +91,10 @@ export class AdminUserService {
   }
 
   async findById(id: string) {
+    return this.withSignedAvatar(await this.getUserById(id));
+  }
+
+  private async getUserById(id: string) {
     const user = await this.userRepository.findOne({
       where: {
         id,
@@ -101,7 +110,7 @@ export class AdminUserService {
   }
 
   async update(id: string, data: UpdateUserDto) {
-    const user = await this.findById(id);
+    const user = await this.getUserById(id);
 
     const email = data.email?.toLowerCase();
 
@@ -128,11 +137,11 @@ export class AdminUserService {
       password,
     });
 
-    return this.userRepository.save(preload);
+    return this.withSignedAvatar(await this.userRepository.save(preload));
   }
 
   async updatePassword(id: string, data: UpdateUserPasswordDto) {
-    const user = await this.findById(id);
+    const user = await this.getUserById(id);
 
     const password = Hash.encrypt(data.password);
 
@@ -141,11 +150,11 @@ export class AdminUserService {
       password,
     });
 
-    return this.userRepository.save(preload);
+    return this.withSignedAvatar(await this.userRepository.save(preload));
   }
 
   async remove(id: string) {
-    const user = await this.findById(id);
+    const user = await this.getUserById(id);
 
     await this.userRepository.softRemove(user);
 
@@ -220,5 +229,12 @@ export class AdminUserService {
     if (filter?.role) where.role = filter.role;
 
     return where;
+  }
+
+  private async withSignedAvatar(user: User): Promise<User> {
+    return {
+      ...user,
+      avatarUrl: await this.s3Service.getSignedUrlForImage(user.avatarUrl),
+    };
   }
 }

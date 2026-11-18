@@ -42,7 +42,7 @@ export class ParishEventService {
 
   async update(id: string, data: UpdateParishEventDto): Promise<ParishEvent> {
     try {
-      const event = await this.findById(id);
+      const event = await this.getParishEventById(id);
       const oldImage = event.image;
       const nextImage =
         data.image === undefined ? event.image : data.image || null;
@@ -99,8 +99,12 @@ export class ParishEventService {
         .take(per_page);
 
       const [items, total] = await qb.getManyAndCount();
+      const signedItems = await Promise.all(
+        items.map((item) => this.withSignedImage(item)),
+      );
+
       return {
-        items,
+        items: signedItems,
         totalItems: total,
         currentPage: page,
         totalPages: Math.ceil(total / per_page),
@@ -111,21 +115,25 @@ export class ParishEventService {
   }
 
   async findById(id: string): Promise<ParishEvent> {
+    return this.withSignedImage(await this.getParishEventById(id));
+  }
+
+  private async getParishEventById(id: string): Promise<ParishEvent> {
     const event = await this.repository.findOne({ where: { id } });
     if (!event) throw new NotFoundException(NOT_FOUND);
     return event;
   }
 
   async findByIdPublic(id: string): Promise<ParishEvent> {
-    const event = await this.findById(id);
+    const event = await this.getParishEventById(id);
     await this.repository.increment({ id }, 'views', 1);
     event.views += 1;
-    return event;
+    return this.withSignedImage(event);
   }
 
   async remove(id: string): Promise<void> {
     try {
-      const event = await this.findById(id);
+      const event = await this.getParishEventById(id);
 
       await this.s3Service.deleteImageFromS3IfNeeded(event.image);
       await this.repository.delete(id);
@@ -138,5 +146,12 @@ export class ParishEventService {
       }
       throw new InternalServerErrorException(DELETE_ERROR);
     }
+  }
+
+  private async withSignedImage(event: ParishEvent): Promise<ParishEvent> {
+    return {
+      ...event,
+      image: await this.s3Service.getSignedUrlForImage(event.image),
+    };
   }
 }

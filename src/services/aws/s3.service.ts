@@ -3,7 +3,6 @@ import {
   GetObjectCommand,
   GetObjectCommandOutput,
   PutObjectCommand,
-  PutObjectAclCommand,
   PutObjectCommandInput,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -16,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import { S3_CLIENT } from 'src/config/s3-config';
+import { S3_CLIENT, S3_SIGNING_CLIENT } from 'src/config/s3-config';
 
 @Injectable()
 export class S3Service implements OnApplicationBootstrap {
@@ -29,6 +28,7 @@ export class S3Service implements OnApplicationBootstrap {
   constructor(
     @Inject(S3_CLIENT) private readonly client: S3Client,
     configService: ConfigService,
+    @Inject(S3_SIGNING_CLIENT) private readonly signingClient: S3Client,
   ) {
     this.bucketName = configService.get<string>('s3.bucketName', 'pousada');
     this.endpoint = configService.get<string>('s3.endpoint');
@@ -64,9 +64,31 @@ export class S3Service implements OnApplicationBootstrap {
         Key: key,
         Body: 'S3 upload health check',
         ContentType: 'text/plain',
-        ACL: 'public-read',
       }),
     );
+
+    try {
+      const object = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.getBucketName(),
+          Key: key,
+        }),
+      );
+      await object.Body?.transformToByteArray();
+    } catch (verificationError) {
+      try {
+        await this.deleteObjectByKey(key);
+      } catch (cleanupError) {
+        this.logger.warn(
+          `Não foi possível remover o arquivo de verificação após falha na leitura: ${
+            cleanupError instanceof Error
+              ? cleanupError.message
+              : String(cleanupError)
+          }`,
+        );
+      }
+      throw verificationError;
+    }
 
     try {
       await this.client.send(
@@ -90,7 +112,7 @@ export class S3Service implements OnApplicationBootstrap {
     });
 
     try {
-      return await getSignedUrl(this.client, command, { expiresIn });
+      return await getSignedUrl(this.signingClient, command, { expiresIn });
     } catch (error) {
       console.error('Erro ao gerar URL assinada:', error);
       throw error;
@@ -112,7 +134,7 @@ export class S3Service implements OnApplicationBootstrap {
       Bucket: this.getBucketName(),
     });
 
-    return getSignedUrl(this.client, command, { expiresIn: 3600 });
+    return getSignedUrl(this.signingClient, command, { expiresIn: 3600 });
   }
 
   async getObjectByKey(key: string): Promise<GetObjectCommandOutput> {
@@ -142,31 +164,33 @@ export class S3Service implements OnApplicationBootstrap {
     );
   }
 
-  async makeObjectPublic(key: string): Promise<void> {
-    await this.client.send(
-      new PutObjectAclCommand({
-        Bucket: this.getBucketName(),
-        Key: key,
-        ACL: 'public-read',
-      }),
-    );
-  }
-
   extractKeyFromS3Url(url: string): string {
     try {
       const { host, pathname } = new URL(url);
-      const configuredHosts = [this.endpoint, this.publicUrl]
-        .filter((value): value is string => Boolean(value))
-        .map((value) => new URL(value).host);
-
-      if (!host.includes('amazonaws.com') && !configuredHosts.includes(host)) {
-        throw new Error('URL não corresponde ao endpoint S3 configurado');
-      }
-
       const segments = pathname
         .split('/')
         .filter(Boolean)
-        .map((segment) => decodeURIComponent(segment));
+        .map(decodeURIComponent);
+
+      const configuredUrls = [this.publicUrl, this.endpoint]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => new URL(value));
+      const configuredUrl = configuredUrls.find((value) => {
+        if (value.host !== host) return false;
+        const basePath = value.pathname
+          .split('/')
+          .filter(Boolean)
+          .map(decodeURIComponent);
+        return basePath.every((segment, index) => segments[index] === segment);
+      });
+
+      if (!configuredUrl) return '';
+
+      const basePath = configuredUrl.pathname
+        .split('/')
+        .filter(Boolean)
+        .map(decodeURIComponent);
+      segments.splice(0, basePath.length);
 
       if (segments[0] === this.bucketName) segments.shift();
       return segments.join('/');
@@ -174,6 +198,17 @@ export class S3Service implements OnApplicationBootstrap {
       console.error('Erro ao extrair key do S3:', error);
       return '';
     }
+  }
+
+  async getSignedUrlForImage(
+    imageUrl?: string | null,
+  ): Promise<string | null | undefined> {
+    if (!imageUrl) return imageUrl;
+
+    const key = this.extractKeyFromS3Url(imageUrl);
+    if (!key) return imageUrl;
+
+    return this.generateSignedUrl(key);
   }
 
   async deleteImageFromS3IfNeeded(imageUrl?: string | null): Promise<void> {

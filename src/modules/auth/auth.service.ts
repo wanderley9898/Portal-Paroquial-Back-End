@@ -7,6 +7,7 @@ import configuration from 'src/config/configuration';
 import { User } from 'src/entities/index';
 import { Hash } from 'src/helpers/hash.helper';
 import { UserService } from 'src/modules/user/user.service';
+import { S3Service } from 'src/services/aws/s3.service';
 import { SocialLoginDto } from './dto/social-login.dto';
 
 @Injectable()
@@ -16,13 +17,17 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private userService: UserService,
+    private readonly s3Service: S3Service,
   ) {}
 
   async login(user: User): Promise<UserLoggedResponse> {
     const payload = { email: user.email, id: user.id };
     return {
       access_token: this.generateToken(payload),
-      data: user,
+      data: {
+        ...user,
+        avatarUrl: await this.s3Service.getSignedUrlForImage(user.avatarUrl),
+      },
     };
   }
 

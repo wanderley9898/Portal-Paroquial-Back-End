@@ -43,7 +43,7 @@ export class AdminUserController {
   */
   @UseGuards(AdminGuard)
   @Post()
-  @UseInterceptors(FileInterceptor('avatar', getMulterConfig(true)))
+  @UseInterceptors(FileInterceptor('avatar', getMulterConfig()))
   @ApiBearerAuth()
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
@@ -111,7 +111,7 @@ export class AdminUserController {
   */
   @UseGuards(AdminGuard)
   @Put(':id')
-  @UseInterceptors(FileInterceptor('avatar', getMulterConfig(true)))
+  @UseInterceptors(FileInterceptor('avatar', getMulterConfig()))
   @ApiBearerAuth()
   async update(
     @Param('id') id: string,

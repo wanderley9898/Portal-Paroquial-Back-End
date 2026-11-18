@@ -53,7 +53,7 @@ export class ParishEventController {
   @Post()
   @UseGuards(AuthGuard)
   @Roles(RolesEnum.ADMIN, RolesEnum.SUPER_ADMIN, RolesEnum.COMMUNICATION)
-  @UseInterceptors(FileInterceptor('image', getMulterConfig(true)))
+  @UseInterceptors(FileInterceptor('image', getMulterConfig()))
   @ApiBearerAuth()
   async create(
     @Body() data: CreateParishEventDto,
@@ -73,7 +73,7 @@ export class ParishEventController {
     RolesEnum.COMMUNICATION,
     RolesEnum.EDITOR,
   )
-  @UseInterceptors(FileInterceptor('image', getMulterConfig(true)))
+  @UseInterceptors(FileInterceptor('image', getMulterConfig()))
   @ApiBearerAuth()
   async update(
     @Param('id') id: string,

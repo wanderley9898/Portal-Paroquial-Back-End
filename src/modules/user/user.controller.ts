@@ -21,6 +21,7 @@ import { Request } from 'express';
 import { CurrentUser } from 'src/decorators/current-user.decorator';
 import { User } from 'src/entities';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { S3Service } from 'src/services/aws/s3.service';
 import { UpdateInfoDto } from './dto/update-info.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserService } from './user.service';
@@ -28,7 +29,10 @@ import { UserService } from './user.service';
 @ApiTags('Usuários')
 @Controller('users')
 export class UserController {
-  constructor(private service: UserService) {}
+  constructor(
+    private service: UserService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @UseGuards(AuthGuard)
   @Get('me')
@@ -47,6 +51,7 @@ export class UserController {
 
     return {
       ...user,
+      avatarUrl: await this.s3Service.getSignedUrlForImage(user.avatarUrl),
     };
   }
 
@@ -67,7 +72,10 @@ export class UserController {
     const result = await this.service.updatePassword(data, user);
     delete result.password;
 
-    return result;
+    return {
+      ...result,
+      avatarUrl: await this.s3Service.getSignedUrlForImage(result.avatarUrl),
+    };
   }
 
   @UseGuards(AuthGuard)
@@ -84,7 +92,10 @@ export class UserController {
     const result = await this.service.updateInfo(data, user);
     delete result.password;
 
-    return result;
+    return {
+      ...result,
+      avatarUrl: await this.s3Service.getSignedUrlForImage(result.avatarUrl),
+    };
   }
 
   @UseGuards(AuthGuard)

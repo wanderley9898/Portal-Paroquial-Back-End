@@ -10,7 +10,7 @@ import multerS3 = require('multer-s3');
 const s3Settings = envs().s3;
 const appFolder = s3Settings.folder;
 
-export function getMulterConfig(isPublic: boolean): Options {
+export function getMulterConfig(): Options {
   const allowedExtensions = [
     '.jpg',
     '.jpeg',
@@ -47,7 +47,6 @@ export function getMulterConfig(isPublic: boolean): Options {
       multerS3({
         s3: s3Config,
         bucket: s3Settings.bucketName,
-        acl: isPublic ? 'public-read' : undefined,
         contentType: multerS3.AUTO_CONTENT_TYPE,
         key: (_, file, cb) => {
           const extension = path.extname(file.originalname).toLowerCase();

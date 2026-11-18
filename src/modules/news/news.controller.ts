@@ -179,7 +179,7 @@ export class NewsController {
         { name: 'coverImage', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 },
       ],
-      getMulterConfig(true),
+      getMulterConfig(),
     ),
   )
   @ApiOperation({
@@ -233,7 +233,7 @@ export class NewsController {
         { name: 'coverImage', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 },
       ],
-      getMulterConfig(true),
+      getMulterConfig(),
     ),
   )
   @ApiOperation({

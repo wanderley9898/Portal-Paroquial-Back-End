@@ -159,7 +159,8 @@ npm run migration:run
 - A integração de arquivos usa a API S3 compatível do RustFS. Configure `S3_ENDPOINT`, `S3_ACCESS_KEY` e `S3_SECRET_KEY` com uma Service Account IAM da aplicação; sem essas variáveis, o Multer mantém o armazenamento em memória local.
 - Ao iniciar com S3 configurado, a API envia e remove um pequeno arquivo de verificação e registra no log se uploads estão operacionais. Uma falha é registrada, mas não impede a inicialização.
 - Se o armazenamento S3 estiver indisponível durante um upload, a API responde com HTTP 503 e `code: "FILE_UPLOAD_UNAVAILABLE"` para identificação pelo frontend.
-- `S3_PUBLIC_URL` é opcional. Configure-a somente quando a URL pública dos objetos for diferente do endpoint S3; o valor deve ser a raiz acessível externamente, sem o nome do bucket.
+- Os arquivos enviados ao S3 são privados. As respostas da API incluem URLs pré-assinadas de leitura, válidas por uma hora. Configure `S3_PUBLIC_URL` com a URL-base pública do endpoint S3 quando o endpoint de `S3_ENDPOINT` não for acessível pelo navegador; preserve no proxy o prefixo de caminho configurado. URLs pré-assinadas podem ser compartilhadas por quem as receber até expirarem.
+- Imagens enviadas antes dessa alteração podem continuar públicas por ACL ou política do bucket. Para torná-las privadas, remova as ACLs `public-read` existentes e qualquer política pública do bucket no RustFS/S3.
 - O seed pode ser disparado automaticamente ao iniciar a aplicação quando a variável RUN_SEED_ON_START estiver definida como true.
 - A aplicação já inclui Swagger para facilitar a exploração dos endpoints durante o desenvolvimento.
 
