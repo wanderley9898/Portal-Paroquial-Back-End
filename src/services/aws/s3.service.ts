@@ -2,20 +2,28 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   GetObjectCommandOutput,
-  PutObjectAclCommand,
   PutObjectCommand,
+  PutObjectAclCommand,
   PutObjectCommandInput,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import { S3_CLIENT } from 'src/config/s3-config';
 
 @Injectable()
-export class S3Service {
+export class S3Service implements OnApplicationBootstrap {
+  private readonly logger = new Logger(S3Service.name);
   private readonly bucketName: string;
   private readonly endpoint?: string;
+  private readonly folder: string;
   private readonly publicUrl?: string;
 
   constructor(
@@ -24,7 +32,55 @@ export class S3Service {
   ) {
     this.bucketName = configService.get<string>('s3.bucketName', 'pousada');
     this.endpoint = configService.get<string>('s3.endpoint');
+    this.folder = configService.get<string>('s3.folder', 'uploads');
     this.publicUrl = configService.get<string>('s3.publicUrl');
+  }
+
+  async onApplicationBootstrap(): Promise<void> {
+    if (!this.endpoint) {
+      this.logger.log(
+        'S3 desabilitado; uploads usarão armazenamento em memória.',
+      );
+      return;
+    }
+
+    try {
+      await this.checkUploadAvailability();
+      this.logger.log('Serviço de upload S3 está operacional.');
+    } catch (error) {
+      this.logger.error(
+        'Não foi possível validar o serviço de upload S3; uploads podem falhar.',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  async checkUploadAvailability(): Promise<void> {
+    const key = `${this.folder}/health-checks/${randomUUID()}.txt`;
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.getBucketName(),
+        Key: key,
+        Body: 'S3 upload health check',
+        ContentType: 'text/plain',
+        ACL: 'public-read',
+      }),
+    );
+
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.getBucketName(),
+          Key: key,
+        }),
+      );
+    } catch (error) {
+      this.logger.warn(
+        'Upload de verificação funcionou, mas não foi possível remover o arquivo de teste.',
+      );
+      throw error;
+    }
   }
 
   async generateSignedUrl(key: string, expiresIn = 3600): Promise<string> {
