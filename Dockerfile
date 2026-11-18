@@ -11,8 +11,8 @@ COPY . .
 RUN yarn build:prod
 
 ENV NODE_ENV=production
-ENV PORT=3902
+ENV PORT=3001
 
-EXPOSE 3902
+EXPOSE 3001
 
 CMD ["yarn", "start:prod"]
